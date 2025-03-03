@@ -1,1 +1,1 @@
-zone_id = "Z023205719FW76DPXIZT6"
+zone_id = "Z023205719FW76DPXIZT6" //replce this with your own Hosted zone ID from Route 53
