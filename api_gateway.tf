@@ -99,7 +99,7 @@ resource "aws_api_gateway_integration_response" "options_integration_response" {
   }
 }
 
-# API Gateway Deployment - FIXED: Removed stage_name to avoid conflict with aws_api_gateway_stage
+# API Gateway Deployment
 resource "aws_api_gateway_deployment" "api_deployment" {
   depends_on = [
     aws_api_gateway_integration.contact_integration,
@@ -107,7 +107,6 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   ]
 
   rest_api_id = aws_api_gateway_rest_api.contact_api.id
-  # Removed stage_name to avoid conflict with aws_api_gateway_stage
   
   # Add triggers to force redeployment when APIs change
   triggers = {
@@ -125,16 +124,14 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   }
 }
 
-# API Gateway Stage Settings - FIXED: Added lifecycle configuration
+# API Gateway Stage Settings
 resource "aws_api_gateway_stage" "api_stage" {
   deployment_id = aws_api_gateway_deployment.api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.contact_api.id
   stage_name    = "${var.environment}-v2"
   
-  # Added lifecycle block to handle potential conflicts with existing resources
   lifecycle {
     create_before_destroy = true
-    # Ignore deployment_id changes to handle existing stage with different deployment
     ignore_changes = [deployment_id]
   }
   
@@ -157,10 +154,65 @@ resource "aws_api_gateway_stage" "api_stage" {
   }
 }
 
+# Add method level throttling settings for the POST method
+resource "aws_api_gateway_method_settings" "contact_method_settings" {
+  rest_api_id = aws_api_gateway_rest_api.contact_api.id
+  stage_name  = aws_api_gateway_stage.api_stage.stage_name
+  method_path = "${aws_api_gateway_resource.contact_resource.path_part}/${aws_api_gateway_method.contact_method.http_method}"
+  
+  settings {
+    # Throttling settings
+    throttling_rate_limit  = 10  # 10 requests per second
+    throttling_burst_limit = 5   # Allow bursts of up to 5 requests
+    
+    # Enable detailed metrics
+    metrics_enabled = true
+    logging_level   = "INFO"
+  }
+}
+
+# Add stage level throttling settings as a fallback (using method_settings with '*/*')
+resource "aws_api_gateway_method_settings" "stage_throttling_settings" {
+  rest_api_id = aws_api_gateway_rest_api.contact_api.id
+  stage_name  = aws_api_gateway_stage.api_stage.stage_name
+  method_path = "*/*"  # This applies to all methods in all resources
+  
+  settings {
+    throttling_rate_limit  = 20  # 20 requests per second at stage level
+    throttling_burst_limit = 10  # Allow bursts of up to 10 requests at stage level
+  }
+}
+
 # CloudWatch Log Group for API Gateway
 resource "aws_cloudwatch_log_group" "api_gateway_log_group" {
   name              = "API-Gateway-Execution-Logs_${aws_api_gateway_rest_api.contact_api.id}/${var.environment}"
   retention_in_days = 7
+  
+  tags = {
+    Environment = var.environment
+  }
+}
+
+# CloudWatch Alarm for Throttling
+resource "aws_cloudwatch_metric_alarm" "throttling_alarm" {
+  alarm_name          = "api-throttling-alarm"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "4XXError"
+  namespace           = "AWS/ApiGateway"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = 10
+  alarm_description   = "This alarm monitors API throttling (429 errors)"
+  
+  dimensions = {
+    ApiName  = aws_api_gateway_rest_api.contact_api.name
+    Stage    = aws_api_gateway_stage.api_stage.stage_name
+    Resource = aws_api_gateway_resource.contact_resource.path
+    Method   = aws_api_gateway_method.contact_method.http_method
+  }
+  
+  alarm_actions = []  # Add SNS topic ARN if you want notifications
   
   tags = {
     Environment = var.environment
