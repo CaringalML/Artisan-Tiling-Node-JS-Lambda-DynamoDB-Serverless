@@ -9,6 +9,11 @@ resource "aws_lambda_function" "contact_form" {
   timeout          = 30
   memory_size      = 256
 
+  # Enable X-Ray tracing
+  tracing_config {
+    mode = "Active"
+  }
+
   environment {
     variables = {
       DYNAMODB_TABLE = aws_dynamodb_table.contact_form.name

@@ -63,6 +63,29 @@ resource "aws_iam_policy" "cloudwatch_policy" {
   })
 }
 
+# X-Ray IAM Policy for Lambda
+resource "aws_iam_policy" "xray_policy" {
+  name        = "${replace(var.lambda_function_name, "-", "_")}_xray_policy"
+  description = "IAM policy for Lambda to use X-Ray"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "xray:PutTraceSegments",
+          "xray:PutTelemetryRecords",
+          "xray:GetSamplingRules",
+          "xray:GetSamplingTargets",
+          "xray:GetSamplingStatisticSummaries"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # Attach DynamoDB Policy to Role
 resource "aws_iam_role_policy_attachment" "dynamodb_policy_attachment" {
   role       = aws_iam_role.lambda_role.name
@@ -73,4 +96,10 @@ resource "aws_iam_role_policy_attachment" "dynamodb_policy_attachment" {
 resource "aws_iam_role_policy_attachment" "cloudwatch_policy_attachment" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.cloudwatch_policy.arn
+}
+
+# Attach X-Ray Policy to Lambda Role
+resource "aws_iam_role_policy_attachment" "xray_policy_attachment" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.xray_policy.arn
 }

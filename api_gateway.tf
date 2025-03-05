@@ -130,6 +130,9 @@ resource "aws_api_gateway_stage" "api_stage" {
   rest_api_id   = aws_api_gateway_rest_api.contact_api.id
   stage_name    = "${var.environment}-v2"
   
+  # Enable X-Ray tracing
+  xray_tracing_enabled = true
+  
   lifecycle {
     create_before_destroy = true
     ignore_changes = [deployment_id]
