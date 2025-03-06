@@ -8,20 +8,21 @@ resource "aws_lambda_function" "contact_form" {
   source_code_hash = filebase64sha256("lambda_function.zip")
   timeout          = 30
   memory_size      = 256
-
+  
   # Enable X-Ray tracing
   tracing_config {
     mode = "Active"
   }
-
+  
   environment {
     variables = {
-      DYNAMODB_TABLE = aws_dynamodb_table.contact_form.name
-      ENVIRONMENT    = var.environment
-      CORS_ORIGIN    = "https://${var.domain_name}"
+      DYNAMODB_TABLE       = aws_dynamodb_table.contact_form.name
+      INVENTORY_TABLE_NAME = aws_dynamodb_table.inventory.name
+      ENVIRONMENT          = var.environment
+      CORS_ORIGIN          = "https://${var.domain_name}"
     }
   }
-
+  
   tags = {
     Name        = var.lambda_function_name
     Environment = var.environment
@@ -37,13 +38,29 @@ resource "aws_lambda_permission" "api_gateway_lambda" {
   source_arn    = "${aws_api_gateway_rest_api.contact_api.execution_arn}/*/*"
 }
 
-# CloudWatch Log Group for Lambda
-resource "aws_cloudwatch_log_group" "lambda_log_group" {
-  name              = "/aws/lambda/${var.lambda_function_name}"
-  retention_in_days = 14
-
-  tags = {
-    Environment = var.environment
-    Function    = var.lambda_function_name
-  }
+# Update IAM role policies if needed - make sure permissions include inventory table
+resource "aws_iam_role_policy" "lambda_dynamodb_policy" {
+  name   = "lambda_dynamodb_policy"
+  role   = aws_iam_role.lambda_role.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Scan",
+          "dynamodb:Query"
+        ],
+        Resource = [
+          aws_dynamodb_table.contact_form.arn,
+          aws_dynamodb_table.inventory.arn,
+          "${aws_dynamodb_table.inventory.arn}/index/*"
+        ],
+        Effect = "Allow"
+      }
+    ]
+  })
 }
