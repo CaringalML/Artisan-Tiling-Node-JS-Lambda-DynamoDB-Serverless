@@ -188,11 +188,10 @@ The application deploys to:
 
 ## 🔒 Security Features
 
-- **Authentication**: API Gateway JWT authorizer (configurable)
 - **Authorization**: IAM role-based access control
 - **Data Protection**: DynamoDB encryption at rest
 - **Transport Security**: HTTPS only with TLS 1.2+
-- **API Protection**: Request throttling and WAF integration
+- **API Protection**: Throttling limits for requests
 
 ## 🚨 Monitoring & Alerts
 
