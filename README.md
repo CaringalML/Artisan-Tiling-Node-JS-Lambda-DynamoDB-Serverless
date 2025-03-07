@@ -38,7 +38,7 @@ A serverless enterprise-grade backend API for Artisan Tiling's inventory managem
 
 ## 🏗️ Architecture Overview
 
-![Architecture Diagram](https://via.placeholder.com/800x400?text=Artisan+Tiling+API+Architecture)
+![Architecture Diagram](architecture-diagram.png)
 
 ### Enterprise-Grade Features
 
