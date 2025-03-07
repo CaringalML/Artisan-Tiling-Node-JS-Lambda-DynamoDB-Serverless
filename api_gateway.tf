@@ -510,4 +510,3 @@ resource "aws_api_gateway_method_settings" "stage_throttling_settings" {
   }
 }
 
-# API Gateway Log Group is now defined in cloudwatch.tf
