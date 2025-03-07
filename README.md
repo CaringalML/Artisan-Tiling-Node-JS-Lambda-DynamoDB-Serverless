@@ -176,7 +176,6 @@ For testing the API endpoints in Postman:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DYNAMODB_TABLE` | Contact form submissions table | `contact-form-submissions` |
 | `INVENTORY_TABLE_NAME` | Inventory items table | `inventory-items` |
 | `ENVIRONMENT` | Deployment environment | `production` |
 | `CORS_ORIGIN` | Allowed origin for CORS | Your domain |
