@@ -4,18 +4,18 @@
     "description": "API for Artisan Tiling contact form",
     "main": "index.js",
     "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1",
-      "start": "node local-server.js",
-      "build": "npm install && cd .. && (if command -v zip >/dev/null 2>&1; then zip -r lambda_function.zip src/node_modules src/index.js src/package.json; else tar -czf lambda_function.tar.gz -C src . && echo 'Created tar.gz instead of zip'; fi)"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node local-server.js",
+        "build": "npm install && cd .. && (if command -v zip >/dev/null 2>&1; then zip -r lambda_function.zip src/node_modules src/index.js src/package.json; else tar -czf lambda_function.tar.gz -C src . && echo 'Created tar.gz instead of zip'; fi)"
     },
     "dependencies": {
-      "aws-sdk": "^2.1451.0",
-      "body-parser": "^1.20.2",
-      "express": "^4.18.2",
-      "serverless-http": "^3.2.0",
-      "uuid": "^9.0.0"
+        "aws-sdk": "^2.1451.0",
+        "aws-xray-sdk": "^3.10.3",
+        "body-parser": "^1.20.2",
+        "express": "^4.18.2",
+        "serverless-http": "^3.2.0",
+        "uuid": "^9.0.0"
     },
-    "devDependencies": {},
     "author": "Artisan Tiling",
     "license": "ISC"
-  }
+}
