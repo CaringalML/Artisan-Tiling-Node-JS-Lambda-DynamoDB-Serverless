@@ -16,7 +16,7 @@ YELLOW := \033[0;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
 
-.PHONY: all clean deploy package terraform verify install local-test help
+.PHONY: all clean deploy package terraform verify install local-test help lint
 
 # Default target
 all: help
@@ -35,12 +35,18 @@ help:
 	@echo "  make outputs    - Show Terraform outputs"
 	@echo "  make destroy    - Destroy Terraform resources"
 	@echo "  make fmt        - Format Terraform files"
+	@echo "  make lint       - Lint JavaScript files"
 
 # Verify directories and commands exist
 verify:
 	@echo "$(GREEN)🔍 Verifying environment...$(NC)"
 	@test -d "$(SRC_DIR)" || (echo "$(RED)❌ src directory not found!$(NC)" && exit 1)
 	@test -f "$(SRC_DIR)/index.js" || (echo "$(RED)❌ src/index.js not found!$(NC)" && exit 1)
+	@test -f "$(SRC_DIR)/app.js" || (echo "$(RED)❌ src/app.js not found!$(NC)" && exit 1)
+	@test -d "$(SRC_DIR)/models" || (echo "$(RED)❌ src/models directory not found!$(NC)" && exit 1)
+	@test -d "$(SRC_DIR)/controllers" || (echo "$(RED)❌ src/controllers directory not found!$(NC)" && exit 1)
+	@test -d "$(SRC_DIR)/routes" || (echo "$(RED)❌ src/routes directory not found!$(NC)" && exit 1)
+	@test -d "$(SRC_DIR)/config" || (echo "$(RED)❌ src/config directory not found!$(NC)" && exit 1)
 	@which zip > /dev/null || (echo "$(RED)❌ zip command not found! Install with: sudo apt-get install zip$(NC)" && exit 1)
 	@which terraform > /dev/null || (echo "$(RED)❌ terraform not found! Please install terraform$(NC)" && exit 1)
 	@echo "$(GREEN)✅ Environment verified$(NC)"
@@ -61,7 +67,7 @@ install:
 # Package Lambda function
 package: clean verify install
 	@echo "$(GREEN)📦 Creating $(LAMBDA_ZIP)...$(NC)"
-	@cd $(SRC_DIR) && zip -r ../$(LAMBDA_ZIP) index.js package.json
+	@cd $(SRC_DIR) && zip -r ../$(LAMBDA_ZIP) . -x "node_modules/*" "test/*" "*.test.js" "local-server.js"
 	@cd $(SRC_DIR)/node_modules && zip -r ../../$(LAMBDA_ZIP) . > /dev/null
 	@echo "$(GREEN)✅ Lambda package created$(NC)"
 
@@ -89,7 +95,16 @@ outputs:
 # Local development server
 local-test:
 	@echo "$(GREEN)🚀 Starting local development server...$(NC)"
-	@cd $(SRC_DIR) && node local-server.js
+	@cd $(SRC_DIR) && node local-server.js || (echo "$(YELLOW)ℹ️ local-server.js not found. Creating...$(NC)" && \
+		echo "const app = require('./app');\n\nconst PORT = process.env.PORT || 3000;\n\napp.listen(PORT, () => {\n  console.log(\`Server running on port \${PORT}\`);\n});" > $(SRC_DIR)/local-server.js && \
+		node $(SRC_DIR)/local-server.js)
+
+# Lint JavaScript files
+lint:
+	@echo "$(GREEN)🔍 Linting JavaScript files...$(NC)"
+	@which eslint > /dev/null || (echo "$(YELLOW)⚠️ ESLint not found. Installing...$(NC)" && npm install -g eslint)
+	@cd $(SRC_DIR) && eslint --ext .js .
+	@echo "$(GREEN)✅ Linting completed$(NC)"
 
 # Destroy resources
 destroy:
