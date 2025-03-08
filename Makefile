@@ -1,5 +1,3 @@
-# Makefile for Artisan Tiling API Deployment (Ubuntu/Linux)
-
 # Variables
 LAMBDA_ZIP = lambda_function.zip
 PROJECT_ROOT = $(shell pwd)
@@ -18,7 +16,7 @@ YELLOW := \033[0;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
 
-.PHONY: all clean deploy package terraform verify install dev help
+.PHONY: all clean deploy package terraform verify install local-test help
 
 # Default target
 all: help
@@ -35,6 +33,8 @@ help:
 	@echo "  make local-test - Start local development server"
 	@echo "  make verify     - Verify environment"
 	@echo "  make outputs    - Show Terraform outputs"
+	@echo "  make destroy    - Destroy Terraform resources"
+	@echo "  make fmt        - Format Terraform files"
 
 # Verify directories and commands exist
 verify:
@@ -49,20 +49,20 @@ verify:
 clean:
 	@echo "$(GREEN)🧹 Cleaning old deployment files...$(NC)"
 	@rm -f $(LAMBDA_ZIP)
-	@rm -rf $(SRC_DIR)/node_modules
 	@echo "$(GREEN)✅ Clean completed$(NC)"
 
-# Install dependencies
+# Install dependencies with a clean slate
 install:
-	@echo "$(GREEN)📦 Installing dependencies...$(NC)"
-	@cd $(SRC_DIR) && npm install
+	@echo "$(GREEN)📦 Removing old node_modules and installing dependencies...$(NC)"
+	@rm -rf $(SRC_DIR)/node_modules
+	@cd $(SRC_DIR) && npm ci
 	@echo "$(GREEN)✅ Dependencies installed$(NC)"
 
 # Package Lambda function
 package: clean verify install
 	@echo "$(GREEN)📦 Creating $(LAMBDA_ZIP)...$(NC)"
 	@cd $(SRC_DIR) && zip -r ../$(LAMBDA_ZIP) index.js package.json
-	@cd $(SRC_DIR)/node_modules && zip -r ../../$(LAMBDA_ZIP) .
+	@cd $(SRC_DIR)/node_modules && zip -r ../../$(LAMBDA_ZIP) . > /dev/null
 	@echo "$(GREEN)✅ Lambda package created$(NC)"
 
 # Run Terraform validation
@@ -97,7 +97,7 @@ destroy:
 	@read -p "" confirm; \
 	if [ "$$confirm" = "yes" ]; then \
 		echo "$(YELLOW)🔥 Destroying infrastructure...$(NC)"; \
-		terraform destroy -var="environment=$(ENV)"; \
+		terraform destroy -var="environment=$(ENV)" -auto-approve; \
 		echo "$(GREEN)✅ Resources destroyed$(NC)"; \
 	else \
 		echo "$(YELLOW)⚠️ Destroy operation cancelled$(NC)"; \
