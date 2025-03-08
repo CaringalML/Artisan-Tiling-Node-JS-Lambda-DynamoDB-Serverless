@@ -17,7 +17,7 @@ A serverless enterprise-grade backend API for Artisan Tiling's inventory managem
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/CaringalML/Artisan-Tiling-Node-JS-Lambda-DynamoDB-Serverless.git
+   git clone -b CRUD https://github.com/CaringalML/Artisan-Tiling-Node-JS-Lambda-DynamoDB-Serverless.git
    cd Artisan-Tiling-Node-JS-Lambda-DynamoDB-Serverless
    ```
 
