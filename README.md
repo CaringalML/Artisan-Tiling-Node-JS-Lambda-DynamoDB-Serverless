@@ -38,7 +38,7 @@ A serverless enterprise-grade backend API for Artisan Tiling's inventory managem
 
 ## 🏗️ Architecture Overview
 
-![Architecture Diagram](architecture-diagram.png)
+![Architecture Diagram](api-gateway-lambda-dynamodb-serverles.png)
 
 ### Enterprise-Grade Features
 
