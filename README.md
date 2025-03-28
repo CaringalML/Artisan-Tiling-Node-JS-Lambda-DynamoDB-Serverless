@@ -1,4 +1,4 @@
-# Artisan Tiling API
+# Artisan Tiling Node.JS Lambda DynamoDB Serverless 
 
 ![Architecture Diagram](api-gateway-lambda-dynamodb-serverles.png)
 
