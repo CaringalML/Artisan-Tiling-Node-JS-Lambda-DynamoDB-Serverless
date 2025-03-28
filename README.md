@@ -233,9 +233,9 @@ This approach eliminates the need for complex CI/CD pipelines while still provid
 - Zip utility (`sudo apt-get install zip`)
 - Registered domain in Route 53
 
-## 📝 License
+## License
 
-This project is licensed under the ISC License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 📞 Contact
 
