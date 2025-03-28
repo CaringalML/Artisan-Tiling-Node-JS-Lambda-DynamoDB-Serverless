@@ -1,5 +1,7 @@
 # Artisan Tiling API
 
+![Architecture Diagram](api-gateway-lambda-dynamodb-serverles.png)
+
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![License](https://img.shields.io/badge/license-ISC-blue) ![Node](https://img.shields.io/badge/node-18.x-green)
 
 A serverless enterprise-grade backend API for Artisan Tiling's inventory management system built on AWS Lambda, DynamoDB, and API Gateway.
