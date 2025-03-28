@@ -242,4 +242,4 @@ This project is licensed under the ISC License.
 **Artisan Tiling**  
 Hamilton, New Zealand  
 [lawrencecaringal5@gmail.com](lawrencecaringal5@gmail.com)  
-[022 124 8553](022 124 8553)
+022 124 8553
