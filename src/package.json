@@ -1,7 +1,7 @@
 {
-    "name": "artisan-tiling-api",
+    "name": "artisan-tiling-inventory-api",
     "version": "1.0.0",
-    "description": "API for Artisan Tiling contact form",
+    "description": "API for Artisan Tiling inventory management",
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",

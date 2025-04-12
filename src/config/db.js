@@ -9,9 +9,8 @@ const dynamoDb = new XRayAWS.DynamoDB.DocumentClient();
 
 // Export environment variables as config
 const config = {
-  CONTACT_TABLE: process.env.DYNAMODB_TABLE,
   INVENTORY_TABLE: process.env.INVENTORY_TABLE_NAME,
-  CORS_ORIGIN: process.env.CORS_ORIGIN || 'https://artisantiling.co.nz'
+  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:3000'
 };
 
 module.exports = {

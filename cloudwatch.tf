@@ -1,7 +1,7 @@
 # CloudWatch Log Group for API Gateway
 resource "aws_cloudwatch_log_group" "api_gateway_logs" {
-  name              = "API-Gateway-Execution-Logs_${aws_api_gateway_rest_api.contact_api.id}/${var.environment}"
-  retention_in_days = 14
+  name              = "API-Gateway-Execution-Logs_${aws_api_gateway_rest_api.inventory_api.id}/${var.environment}"
+  retention_in_days = var.cloudwatch_logs_retention
 
   tags = {
     Environment = var.environment
@@ -12,7 +12,7 @@ resource "aws_cloudwatch_log_group" "api_gateway_logs" {
 # CloudWatch Log Group for Lambda
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name              = "/aws/lambda/${var.lambda_function_name}"
-  retention_in_days = 14
+  retention_in_days = var.cloudwatch_logs_retention
 
   tags = {
     Environment = var.environment
@@ -21,45 +21,19 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
 }
 
 # CloudWatch Alarm for API Throttling (429 errors)
-resource "aws_cloudwatch_metric_alarm" "throttling_alarm" {
-  alarm_name          = "api-throttling-alarm"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 1
-  metric_name         = "4XXError"
-  namespace           = "AWS/ApiGateway"
-  period              = 60
-  statistic           = "Sum"
-  threshold           = 10
-  alarm_description   = "This alarm monitors API throttling (429 errors)"
-  
-  dimensions = {
-    ApiName  = aws_api_gateway_rest_api.contact_api.name
-    Stage    = aws_api_gateway_stage.api_stage.stage_name
-    Resource = aws_api_gateway_resource.contact_resource.path
-    Method   = aws_api_gateway_method.contact_method.http_method
-  }
-  
-  alarm_actions = []  # Add SNS topic ARN if you want notifications
-  
-  tags = {
-    Environment = var.environment
-  }
-}
-
-# CloudWatch Alarm for Inventory API Throttling
 resource "aws_cloudwatch_metric_alarm" "inventory_throttling_alarm" {
-  alarm_name          = "inventory-api-throttling-alarm"
+  alarm_name          = "${var.api_name}-throttling-alarm"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
   metric_name         = "4XXError"
   namespace           = "AWS/ApiGateway"
   period              = 60
   statistic           = "Sum"
-  threshold           = 10
+  threshold           = var.alarm_thresholds.api_throttling
   alarm_description   = "This alarm monitors Inventory API throttling (429 errors)"
   
   dimensions = {
-    ApiName  = aws_api_gateway_rest_api.contact_api.name
+    ApiName  = aws_api_gateway_rest_api.inventory_api.name
     Stage    = aws_api_gateway_stage.api_stage.stage_name
     Resource = aws_api_gateway_resource.inventory_resource.path
   }
@@ -80,7 +54,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors_alarm" {
   namespace           = "AWS/Lambda"
   period              = 60
   statistic           = "Sum"
-  threshold           = 2
+  threshold           = var.alarm_thresholds.lambda_errors
   alarm_description   = "This alarm monitors Lambda function errors"
   
   dimensions = {
@@ -103,7 +77,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_duration_alarm" {
   namespace           = "AWS/Lambda"
   period              = 60
   statistic           = "Average"
-  threshold           = 3000  # 3 seconds in milliseconds
+  threshold           = var.alarm_thresholds.lambda_duration  # milliseconds
   alarm_description   = "This alarm monitors Lambda function execution time"
   
   dimensions = {
@@ -126,7 +100,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles_alarm" {
   namespace           = "AWS/Lambda"
   period              = 60
   statistic           = "Sum"
-  threshold           = 1
+  threshold           = var.alarm_thresholds.lambda_throttles
   alarm_description   = "This alarm monitors Lambda function throttling"
   
   dimensions = {
@@ -140,43 +114,20 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles_alarm" {
   }
 }
 
-# CloudWatch Alarm for DynamoDB Throttling - Contact Form Table
-resource "aws_cloudwatch_metric_alarm" "dynamodb_write_throttle_alarm" {
-  alarm_name          = "${var.dynamodb_table_name}-write-throttles"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 1
-  metric_name         = "WriteThrottleEvents"
-  namespace           = "AWS/DynamoDB"
-  period              = 60
-  statistic           = "Sum"
-  threshold           = 1
-  alarm_description   = "This alarm monitors DynamoDB write throttling events for the contact form table"
-  
-  dimensions = {
-    TableName = var.dynamodb_table_name
-  }
-  
-  alarm_actions = []  # Add SNS topic ARN if you want notifications
-  
-  tags = {
-    Environment = var.environment
-  }
-}
-
 # CloudWatch Alarm for DynamoDB Throttling - Inventory Table
 resource "aws_cloudwatch_metric_alarm" "inventory_dynamodb_write_throttle_alarm" {
-  alarm_name          = "${var.dynamodb_table_name}-inventory-write-throttles"
+  alarm_name          = "${var.inventory_table_name}-write-throttles"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
   metric_name         = "WriteThrottleEvents"
   namespace           = "AWS/DynamoDB"
   period              = 60
   statistic           = "Sum"
-  threshold           = 1
+  threshold           = var.alarm_thresholds.dynamodb_throttle
   alarm_description   = "This alarm monitors DynamoDB write throttling events for the inventory table"
   
   dimensions = {
-    TableName = "${var.dynamodb_table_name}-inventory"
+    TableName = var.inventory_table_name
   }
   
   alarm_actions = []  # Add SNS topic ARN if you want notifications
@@ -293,7 +244,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_log_errors_alarm" {
 
 # CloudWatch Dashboard for Inventory Metrics
 resource "aws_cloudwatch_dashboard" "inventory_dashboard" {
-  dashboard_name = "inventory-metrics-dashboard"
+  dashboard_name = "cloudstruct-inventory-metrics-dashboard"
   
   dashboard_body = jsonencode({
     widgets = [
@@ -305,8 +256,8 @@ resource "aws_cloudwatch_dashboard" "inventory_dashboard" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ApiGateway", "Count", "ApiName", aws_api_gateway_rest_api.contact_api.name, "Resource", aws_api_gateway_resource.inventory_resource.path, "Method", "GET", "Stage", aws_api_gateway_stage.api_stage.stage_name],
-            ["AWS/ApiGateway", "Count", "ApiName", aws_api_gateway_rest_api.contact_api.name, "Resource", aws_api_gateway_resource.inventory_resource.path, "Method", "POST", "Stage", aws_api_gateway_stage.api_stage.stage_name],
+            ["AWS/ApiGateway", "Count", "ApiName", aws_api_gateway_rest_api.inventory_api.name, "Resource", aws_api_gateway_resource.inventory_resource.path, "Method", "GET", "Stage", aws_api_gateway_stage.api_stage.stage_name],
+            ["AWS/ApiGateway", "Count", "ApiName", aws_api_gateway_rest_api.inventory_api.name, "Resource", aws_api_gateway_resource.inventory_resource.path, "Method", "POST", "Stage", aws_api_gateway_stage.api_stage.stage_name],
             ["...", "${aws_api_gateway_resource.inventory_item_resource.path}", "Method", "GET"],
             ["...", "${aws_api_gateway_resource.inventory_item_resource.path}", "Method", "PUT"],
             ["...", "${aws_api_gateway_resource.inventory_item_resource.path}", "Method", "DELETE"]
@@ -326,7 +277,7 @@ resource "aws_cloudwatch_dashboard" "inventory_dashboard" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ApiGateway", "Latency", "ApiName", aws_api_gateway_rest_api.contact_api.name, "Resource", aws_api_gateway_resource.inventory_resource.path, "Stage", aws_api_gateway_stage.api_stage.stage_name],
+            ["AWS/ApiGateway", "Latency", "ApiName", aws_api_gateway_rest_api.inventory_api.name, "Resource", aws_api_gateway_resource.inventory_resource.path, "Stage", aws_api_gateway_stage.api_stage.stage_name],
             ["...", "${aws_api_gateway_resource.inventory_item_resource.path}"]
           ]
           view    = "timeSeries"
@@ -344,7 +295,7 @@ resource "aws_cloudwatch_dashboard" "inventory_dashboard" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ApiGateway", "4XXError", "ApiName", aws_api_gateway_rest_api.contact_api.name, "Resource", aws_api_gateway_resource.inventory_resource.path, "Stage", aws_api_gateway_stage.api_stage.stage_name],
+            ["AWS/ApiGateway", "4XXError", "ApiName", aws_api_gateway_rest_api.inventory_api.name, "Resource", aws_api_gateway_resource.inventory_resource.path, "Stage", aws_api_gateway_stage.api_stage.stage_name],
             ["...", "${aws_api_gateway_resource.inventory_item_resource.path}"]
           ]
           view    = "timeSeries"
@@ -362,7 +313,7 @@ resource "aws_cloudwatch_dashboard" "inventory_dashboard" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ApiGateway", "5XXError", "ApiName", aws_api_gateway_rest_api.contact_api.name, "Resource", aws_api_gateway_resource.inventory_resource.path, "Stage", aws_api_gateway_stage.api_stage.stage_name],
+            ["AWS/ApiGateway", "5XXError", "ApiName", aws_api_gateway_rest_api.inventory_api.name, "Resource", aws_api_gateway_resource.inventory_resource.path, "Stage", aws_api_gateway_stage.api_stage.stage_name],
             ["...", "${aws_api_gateway_resource.inventory_item_resource.path}"]
           ]
           view    = "timeSeries"

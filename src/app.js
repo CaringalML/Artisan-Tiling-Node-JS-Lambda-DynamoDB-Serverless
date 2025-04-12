@@ -4,7 +4,6 @@ const AWSXRay = require('aws-xray-sdk');
 const { config } = require('./config/db');
 
 // Import routes
-const contactRoutes = require('./routes/contactRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const healthRoutes = require('./routes/healthRoutes');
 
@@ -15,7 +14,7 @@ const XRayExpress = AWSXRay.express;
 const app = express();
 
 // Add X-Ray middleware (should be added before other middleware)
-app.use(XRayExpress.openSegment('ContactFormAPI'));
+app.use(XRayExpress.openSegment('InventoryAPI'));
 
 app.use(bodyParser.json());
 
@@ -34,7 +33,6 @@ app.use((req, res, next) => {
 });
 
 // Register routes
-app.use('/contact', contactRoutes);
 app.use('/inventory', inventoryRoutes);
 app.use('/health', healthRoutes);
 
