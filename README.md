@@ -61,7 +61,7 @@ A serverless enterprise-grade backend API for Artisan Tiling's inventory managem
 ✅ **Performance**: Serverless architecture with global distribution  
 ✅ **Cost Optimization**: Pay-per-use with no idle resources  
 
-## 📚 API Reference
+## 📚 API References
 
 ### Inventory Management Endpoints
 
